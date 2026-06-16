@@ -12,7 +12,10 @@ from routes.garments import router as garments_router
 from routes.recommendations import router as recommendations_router
 from routes.feedback import router as feedback_router
 from routes.weather import router as weather_router
-
+from models.user_model import User
+from models.garment_model import Garment
+from models.feedback_model import Feedback
+from models.recommendation_model import Recommendation
 # Create tables (for dev only — use Alembic migrations in production)
 Base.metadata.create_all(bind=engine)
 
