@@ -47,22 +47,22 @@ async def get_weather(lat: float, lon: float):
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
 
-    if response.status_code != 200:
-         print("Status:", response.status_code)
-         print("Response:", response.text)
+        if response.status_code != 200:
+             print("Status:", response.status_code)
+             print("Response:", response.text)
 
-    raise HTTPException(
-        status_code=502,
-        detail=f"OpenWeather error: {response.text}"
+             raise HTTPException(
+                status_code=502,
+                detail=f"OpenWeather error: {response.text}"
     )
 
-    data        = response.json()
-    label       = map_weather(data)
+    data = response.json()
+    label = map_weather(data)
     temperature = data["main"]["temp"]
     description = data["weather"][0]["description"]
 
     return {
-        "label":       label,         # "hot" | "cold" | "rainy" | "cloudy"
-        "temperature": temperature,   # actual °C value
-        "description": description,   # eg: "light rain"
+        "label": label,
+        "temperature": temperature,
+        "description": description,
     }
