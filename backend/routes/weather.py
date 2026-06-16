@@ -48,7 +48,13 @@ async def get_weather(lat: float, lon: float):
         response = await client.get(url)
 
     if response.status_code != 200:
-        raise HTTPException(status_code=502, detail="Failed to fetch weather data")
+         print("Status:", response.status_code)
+         print("Response:", response.text)
+
+    raise HTTPException(
+        status_code=502,
+        detail=f"OpenWeather error: {response.text}"
+    )
 
     data        = response.json()
     label       = map_weather(data)
