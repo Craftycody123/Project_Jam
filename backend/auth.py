@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from database import get_db
 from dotenv import load_dotenv
-import models, os
+from models import user_models
+import  os
 
 load_dotenv()
 
@@ -41,7 +42,7 @@ async def get_current_user(
     except JWTError:
         raise HTTPException(status_code=401, detail={"error": "Invalid token", "status": 401})
 
-    result = await db.execute(select(models.User).where(models.User.email == email))
+    result = await db.execute(select(user_models.User).where(user_models.User.email == email))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=401, detail={"error": "User not found", "status": 401})

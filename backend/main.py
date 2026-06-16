@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from contextlib import asynccontextmanager
-
-import models, schemas, auth
+from models import user_models
+import schemas, auth
 from database import engine, get_db, Base
 
 @asynccontextmanager
@@ -30,11 +30,11 @@ app.add_middleware(
 
 @app.post("/auth/register", response_model=schemas.TokenResponse)
 async def register(data: schemas.RegisterRequest, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(models.User).where(models.User.email == data.email))
+    result = await db.execute(select(user_models.User).where(user_models.User.email == data.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail={"error": "Email already registered", "status": 400})
 
-    user = models.User(
+    user = user_models.User(
         name=data.name,
         email=data.email,
         hashed_password=auth.hash_password(data.password)
@@ -49,7 +49,7 @@ async def register(data: schemas.RegisterRequest, db: AsyncSession = Depends(get
 
 @app.post("/auth/login", response_model=schemas.TokenResponse)
 async def login(data: schemas.LoginRequest, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(models.User).where(models.User.email == data.email))
+    result = await db.execute(select(user_models.User).where(user_models.User.email == data.email))
     user = result.scalar_one_or_none()
 
     if not user or not auth.verify_password(data.password, user.hashed_password):
