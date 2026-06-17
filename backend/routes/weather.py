@@ -11,17 +11,11 @@ OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
 
 def map_weather(data: dict) -> str:
-    """
-    Map OpenWeatherMap response to simple label.
-    Returns: "hot" | "cold" | "rainy" | "cloudy"
-    """
-    temp        = data["main"]["temp"]      # Celsius
-    weather_id  = data["weather"][0]["id"]  # OWM weather condition code
+    temp       = data["main"]["temp"]
+    weather_id = data["weather"][0]["id"]
 
-    # Rain: codes 500–531
     if 500 <= weather_id <= 531:
         return "rainy"
-
     if temp > 30:
         return "hot"
     elif temp < 15:
@@ -32,10 +26,6 @@ def map_weather(data: dict) -> str:
 
 @router.get("/")
 async def get_weather(lat: float, lon: float):
-    """
-    Fetch weather for given coordinates.
-    Query params: lat, lon
-    """
     if not OPENWEATHER_API_KEY:
         raise HTTPException(status_code=500, detail="Weather API key not configured")
 
@@ -47,22 +37,16 @@ async def get_weather(lat: float, lon: float):
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
 
-        if response.status_code != 200:
-             print("Status:", response.status_code)
-             print("Response:", response.text)
+    if response.status_code != 200:
+        raise HTTPException(status_code=502, detail="Failed to fetch weather data")
 
-             raise HTTPException(
-                status_code=502,
-                detail=f"OpenWeather error: {response.text}"
-    )
-
-    data = response.json()
-    label = map_weather(data)
+    data        = response.json()
+    label       = map_weather(data)
     temperature = data["main"]["temp"]
     description = data["weather"][0]["description"]
 
     return {
-        "label": label,
+        "label":       label,
         "temperature": temperature,
         "description": description,
     }

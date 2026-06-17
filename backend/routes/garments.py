@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from sqlalchemy.orm import Session
-from typing import List, Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from typing import Optional
 from datetime import datetime
 import json
 
@@ -11,13 +12,13 @@ from services.cloudinary_service import upload_image, delete_image
 router = APIRouter(prefix="/garments", tags=["Garments"])
 
 
-# ─── Helper: get garment or 404 ─────────────────────────────────────────────
+# ─── Helper ──────────────────────────────────────────────────────────────────
 
-def get_garment_or_404(garment_id: int, user_id: int, db: Session) -> Garment:
-    garment = db.query(Garment).filter(
-        Garment.id == garment_id,
-        Garment.user_id == user_id
-    ).first()
+async def get_garment_or_404(garment_id: int, user_id: int, db: AsyncSession) -> Garment:
+    result = await db.execute(
+        select(Garment).where(Garment.id == garment_id, Garment.user_id == user_id)
+    )
+    garment = result.scalar_one_or_none()
     if not garment:
         raise HTTPException(status_code=404, detail="Garment not found")
     return garment
@@ -32,16 +33,14 @@ async def upload_garment(
     color:    str        = Form(...),
     fabric:   str        = Form(...),
     style:    str        = Form(...),
-    tags:     str        = Form("[]"),          # JSON string eg: '["summer","light"]'
-    db:       Session    = Depends(get_db),
+    tags:     str        = Form("[]"),
+    db:       AsyncSession = Depends(get_db),
     # TODO: replace with real JWT user_id from auth middleware
     user_id:  int        = 1
 ):
-    # Upload to Cloudinary
     contents = await file.read()
     upload_result = upload_image(contents)
 
-    # Parse tags JSON string
     try:
         tags_list = json.loads(tags)
     except Exception:
@@ -59,8 +58,8 @@ async def upload_garment(
         is_new    = True,
     )
     db.add(garment)
-    db.commit()
-    db.refresh(garment)
+    await db.commit()
+    await db.refresh(garment)
 
     return {
         "id":          garment.id,
@@ -78,11 +77,13 @@ async def upload_garment(
 # ─── GET /garments ───────────────────────────────────────────────────────────
 
 @router.get("/")
-def get_wardrobe(
-    db:      Session = Depends(get_db),
-    user_id: int     = 1
+async def get_wardrobe(
+    db:      AsyncSession = Depends(get_db),
+    user_id: int          = 1
 ):
-    garments = db.query(Garment).filter(Garment.user_id == user_id).all()
+    result   = await db.execute(select(Garment).where(Garment.user_id == user_id))
+    garments = result.scalars().all()
+
     return [
         {
             "id":          g.id,
@@ -103,12 +104,12 @@ def get_wardrobe(
 # ─── GET /garments/{id} ──────────────────────────────────────────────────────
 
 @router.get("/{garment_id}")
-def get_garment(
+async def get_garment(
     garment_id: int,
-    db:         Session = Depends(get_db),
-    user_id:    int     = 1
+    db:         AsyncSession = Depends(get_db),
+    user_id:    int          = 1
 ):
-    g = get_garment_or_404(garment_id, user_id, db)
+    g = await get_garment_or_404(garment_id, user_id, db)
     return {
         "id":          g.id,
         "image_url":   g.image_url,
@@ -127,17 +128,17 @@ def get_garment(
 # ─── PUT /garments/{id} ──────────────────────────────────────────────────────
 
 @router.put("/{garment_id}")
-def update_garment(
+async def update_garment(
     garment_id: int,
-    category:   Optional[str]  = Form(None),
-    color:      Optional[str]  = Form(None),
-    fabric:     Optional[str]  = Form(None),
-    style:      Optional[str]  = Form(None),
-    tags:       Optional[str]  = Form(None),
-    db:         Session        = Depends(get_db),
-    user_id:    int            = 1
+    category:   Optional[str] = Form(None),
+    color:      Optional[str] = Form(None),
+    fabric:     Optional[str] = Form(None),
+    style:      Optional[str] = Form(None),
+    tags:       Optional[str] = Form(None),
+    db:         AsyncSession  = Depends(get_db),
+    user_id:    int           = 1
 ):
-    g = get_garment_or_404(garment_id, user_id, db)
+    g = await get_garment_or_404(garment_id, user_id, db)
 
     if category: g.category = category
     if color:    g.color    = color
@@ -149,24 +150,21 @@ def update_garment(
         except Exception:
             pass
 
-    db.commit()
-    db.refresh(g)
+    await db.commit()
+    await db.refresh(g)
     return {"message": "Garment updated", "id": g.id}
 
 
 # ─── DELETE /garments/{id} ───────────────────────────────────────────────────
 
 @router.delete("/{garment_id}")
-def delete_garment(
+async def delete_garment(
     garment_id: int,
-    db:         Session = Depends(get_db),
-    user_id:    int     = 1
+    db:         AsyncSession = Depends(get_db),
+    user_id:    int          = 1
 ):
-    g = get_garment_or_404(garment_id, user_id, db)
-
-    # Delete from Cloudinary first
+    g = await get_garment_or_404(garment_id, user_id, db)
     delete_image(g.public_id)
-
-    db.delete(g)
-    db.commit()
+    await db.delete(g)
+    await db.commit()
     return {"message": "Garment deleted", "id": garment_id}

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from pydantic import BaseModel
 
 from database import get_db
@@ -11,42 +12,37 @@ from services.recommendation_engine import generate_recommendation
 router = APIRouter(prefix="/recommendations", tags=["Recommendations"])
 
 
-# ─── Request Schema ──────────────────────────────────────────────────────────
-
 class GenerateRequest(BaseModel):
-    occasion: str    # formal | casual | party | sports | college
-    weather:  str    # hot | cold | rainy | cloudy
+    occasion: str
+    weather:  str
 
 
 # ─── POST /recommendations/generate ─────────────────────────────────────────
 
 @router.post("/generate")
-def generate(
+async def generate(
     body:    GenerateRequest,
-    db:      Session = Depends(get_db),
-    user_id: int     = 1
+    db:      AsyncSession = Depends(get_db),
+    user_id: int          = 1
 ):
-    # Fetch all garments for user
-    garments = db.query(Garment).filter(Garment.user_id == user_id).all()
+    result   = await db.execute(select(Garment).where(Garment.user_id == user_id))
+    garments = result.scalars().all()
 
     if not garments:
         raise HTTPException(status_code=404, detail="No garments in wardrobe")
 
-    # Build feedback map { garment_id: "like" | "dislike" }
-    feedbacks = db.query(Feedback).filter(Feedback.user_id == user_id).all()
+    fb_result    = await db.execute(select(Feedback).where(Feedback.user_id == user_id))
+    feedbacks    = fb_result.scalars().all()
     feedback_map = {f.garment_id: f.feedback for f in feedbacks}
 
-    # Run recommendation engine
-    recommended = generate_recommendation(
-        garments     = garments,
+    recommended     = generate_recommendation(
+        garments     = list(garments),
         occasion     = body.occasion,
         weather      = body.weather,
         feedback_map = feedback_map,
     )
-
     recommended_ids = [g.id for g in recommended]
 
-    # Save recommendation to DB
     rec = Recommendation(
         user_id           = user_id,
         recommended_items = recommended_ids,
@@ -54,8 +50,8 @@ def generate(
         weather           = body.weather,
     )
     db.add(rec)
-    db.commit()
-    db.refresh(rec)
+    await db.commit()
+    await db.refresh(rec)
 
     return {
         "id":       rec.id,
@@ -79,22 +75,25 @@ def generate(
 # ─── GET /recommendations/history ───────────────────────────────────────────
 
 @router.get("/history")
-def get_history(
-    db:      Session = Depends(get_db),
-    user_id: int     = 1
+async def get_history(
+    db:      AsyncSession = Depends(get_db),
+    user_id: int          = 1
 ):
-    recs = db.query(Recommendation).filter(
-        Recommendation.user_id == user_id
-    ).order_by(Recommendation.created_at.desc()).all()
+    result = await db.execute(
+        select(Recommendation)
+        .where(Recommendation.user_id == user_id)
+        .order_by(Recommendation.created_at.desc())
+    )
+    recs   = result.scalars().all()
 
-    result = []
+    history = []
     for rec in recs:
-        # Fetch full garment details for each recommendation
-        garments = db.query(Garment).filter(
-            Garment.id.in_(rec.recommended_items)
-        ).all()
+        g_result = await db.execute(
+            select(Garment).where(Garment.id.in_(rec.recommended_items))
+        )
+        garments = g_result.scalars().all()
 
-        result.append({
+        history.append({
             "id":       rec.id,
             "occasion": rec.occasion,
             "weather":  rec.weather,
@@ -110,4 +109,4 @@ def get_history(
             "created_at": rec.created_at,
         })
 
-    return result
+    return history

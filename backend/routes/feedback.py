@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from pydantic import BaseModel
 
 from database import get_db
@@ -8,8 +9,6 @@ from models.recommendation_model import Recommendation
 
 router = APIRouter(prefix="/recommendations", tags=["Feedback"])
 
-
-# ─── Request Schema ──────────────────────────────────────────────────────────
 
 class FeedbackRequest(BaseModel):
     recommendation_id: int
@@ -20,37 +19,38 @@ class FeedbackRequest(BaseModel):
 # ─── POST /recommendations/feedback ─────────────────────────────────────────
 
 @router.post("/feedback")
-def submit_feedback(
+async def submit_feedback(
     body:    FeedbackRequest,
-    db:      Session = Depends(get_db),
-    user_id: int     = 1
+    db:      AsyncSession = Depends(get_db),
+    user_id: int          = 1
 ):
     if body.feedback not in ["like", "dislike"]:
         raise HTTPException(status_code=400, detail="Feedback must be 'like' or 'dislike'")
 
-    # Check recommendation exists
-    rec = db.query(Recommendation).filter(
-        Recommendation.id      == body.recommendation_id,
-        Recommendation.user_id == user_id
-    ).first()
-
+    rec_result = await db.execute(
+        select(Recommendation).where(
+            Recommendation.id      == body.recommendation_id,
+            Recommendation.user_id == user_id
+        )
+    )
+    rec = rec_result.scalar_one_or_none()
     if not rec:
         raise HTTPException(status_code=404, detail="Recommendation not found")
 
-    # Check if feedback already exists for this garment + recommendation
-    existing = db.query(Feedback).filter(
-        Feedback.recommendation_id == body.recommendation_id,
-        Feedback.garment_id        == body.garment_id,
-        Feedback.user_id           == user_id
-    ).first()
+    existing_result = await db.execute(
+        select(Feedback).where(
+            Feedback.recommendation_id == body.recommendation_id,
+            Feedback.garment_id        == body.garment_id,
+            Feedback.user_id           == user_id
+        )
+    )
+    existing = existing_result.scalar_one_or_none()
 
     if existing:
-        # Update existing feedback
         existing.feedback = body.feedback
-        db.commit()
+        await db.commit()
         return {"message": "Feedback updated", "feedback": body.feedback}
 
-    # Create new feedback
     fb = Feedback(
         recommendation_id = body.recommendation_id,
         garment_id        = body.garment_id,
@@ -58,8 +58,8 @@ def submit_feedback(
         feedback          = body.feedback,
     )
     db.add(fb)
-    db.commit()
-    db.refresh(fb)
+    await db.commit()
+    await db.refresh(fb)
 
     return {
         "id":                fb.id,
@@ -73,13 +73,16 @@ def submit_feedback(
 # ─── GET /recommendations/feedback ──────────────────────────────────────────
 
 @router.get("/feedback")
-def get_feedback_history(
-    db:      Session = Depends(get_db),
-    user_id: int     = 1
+async def get_feedback_history(
+    db:      AsyncSession = Depends(get_db),
+    user_id: int          = 1
 ):
-    feedbacks = db.query(Feedback).filter(
-        Feedback.user_id == user_id
-    ).order_by(Feedback.created_at.desc()).all()
+    result    = await db.execute(
+        select(Feedback)
+        .where(Feedback.user_id == user_id)
+        .order_by(Feedback.created_at.desc())
+    )
+    feedbacks = result.scalars().all()
 
     return [
         {
