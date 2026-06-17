@@ -7,6 +7,18 @@ from models import user_models
 import schemas, auth
 from database import engine, get_db, Base
 
+# Wardrobe models
+from models.garment_model import Garment
+from models.recommendation_model import Recommendation
+from models.feedback_model import Feedback
+
+# Wardrobe routers
+from routes.garments import router as garments_router
+from routes.recommendations import router as recommendations_router
+from routes.feedback import router as feedback_router
+from routes.weather import router as weather_router
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
@@ -17,23 +29,24 @@ async def lifespan(app: FastAPI):
         print(f"❌ DB connection failed: {e}")
     yield
 
-app = FastAPI(lifespan=lifespan)
+
+app = FastAPI(title="OOTD API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ── Auth ─────────────────────────────────────────────────
+# ── Auth ──────────────────────────────────────────────────────────────────────
 
 @app.post("/auth/register", response_model=schemas.TokenResponse)
 async def register(data: schemas.RegisterRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(user_models.User).where(user_models.User.email == data.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail={"error": "Email already registered", "status": 400})
-
     user = user_models.User(
         name=data.name,
         email=data.email,
@@ -42,7 +55,6 @@ async def register(data: schemas.RegisterRequest, db: AsyncSession = Depends(get
     db.add(user)
     await db.commit()
     await db.refresh(user)
-
     token = auth.create_token(user.email)
     return {"token": token, "user": user}
 
@@ -51,10 +63,8 @@ async def register(data: schemas.RegisterRequest, db: AsyncSession = Depends(get
 async def login(data: schemas.LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(user_models.User).where(user_models.User.email == data.email))
     user = result.scalar_one_or_none()
-
     if not user or not auth.verify_password(data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail={"error": "Invalid credentials", "status": 401})
-
     token = auth.create_token(user.email)
     return {"token": token, "user": user}
 
@@ -64,7 +74,7 @@ async def get_me(current_user=Depends(auth.get_current_user)):
     return current_user
 
 
-# ── Profile ───────────────────────────────────────────────
+# ── Profile ───────────────────────────────────────────────────────────────────
 
 @app.get("/profile", response_model=schemas.ProfileResponse)
 async def get_profile(current_user=Depends(auth.get_current_user)):
@@ -87,7 +97,19 @@ async def update_profile(
         current_user.location = data.location
     if data.preferences is not None:
         current_user.preferences = data.preferences
-
     await db.commit()
     await db.refresh(current_user)
     return current_user
+
+
+# ── Wardrobe ──────────────────────────────────────────────────────────────────
+
+app.include_router(garments_router)
+app.include_router(recommendations_router)
+app.include_router(feedback_router)
+app.include_router(weather_router)
+
+
+@app.get("/")
+def root():
+    return {"message": "OOTD API is running"}
