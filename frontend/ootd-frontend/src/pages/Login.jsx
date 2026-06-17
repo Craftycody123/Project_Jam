@@ -1,99 +1,69 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import Spinner from "../components/Spinner";
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
-  const { login } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [errors, setErrors] = useState({});
-  const [serverError, setServerError] = useState("");
+  const { login } = useAuth();
+  const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState('');
 
-  const validate = () => {
-    const e = {};
-    if (!form.email) e.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Invalid email";
-    if (!form.password) e.password = "Password is required";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (ev) => {
-    ev.preventDefault();
-    setServerError("");
-    if (!validate()) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setServerError('');
     setLoading(true);
     try {
       await login(form.email, form.password);
-      navigate("/profile" );
+      navigate({ to: '/profile' });
     } catch (err) {
-      setServerError(err?.response?.data?.message || "Login failed");
+      setServerError(err?.response?.data?.message || 'Login failed. Check your credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-amber-50 via-stone-50 to-rose-50">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-serif tracking-tight text-stone-900">OOTD</h1>
-          <p className="mt-2 text-sm text-stone-500 tracking-widest uppercase">Welcome back</p>
-        </div>
-        <div className="rounded-2xl bg-white shadow-xl shadow-stone-200/60 p-8 border border-stone-100">
-          <h2 className="text-2xl font-semibold text-stone-900">Sign in</h2>
-          <p className="mt-1 text-sm text-stone-500">Continue curating your style</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome back</h1>
+        <p className="text-slate-500 mb-6">Sign in to your OOTD account</p>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-stone-700 mb-1.5">Email</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="you@example.com"
-                className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900 transition"
-              />
-              {errors.email && <p className="mt-1 text-xs text-rose-600">{errors.email}</p>}
-            </div>
+        {serverError && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm border border-red-200">
+            {serverError}
+          </div>
+        )}
 
-            <div>
-              <label className="block text-xs font-medium text-stone-700 mb-1.5">Password</label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="Your password"
-                className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900 transition"
-              />
-              {errors.password && <p className="mt-1 text-xs text-rose-600">{errors.password}</p>}
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <input
+              type="email" name="email" required value={form.email} onChange={handleChange}
+              className="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+            <input
+              type="password" name="password" required value={form.password} onChange={handleChange}
+              className="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+          <button
+            type="submit" disabled={loading}
+            className="w-full py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60 transition"
+          >
+            {loading ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
 
-            {serverError && (
-              <div className="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-rose-700">
-                {serverError}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-stone-900 text-white py-2.5 text-sm font-medium hover:bg-stone-800 disabled:opacity-60 transition"
-            >
-              {loading && <Spinner />}
-              {loading ? "Signing in..." : "Sign in"}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-stone-500">
-            New to OOTD?{" "}
-            <Link to="/signup" className="font-medium text-stone-900 underline underline-offset-4">
-              Create an account
-            </Link>
-          </p>
-        </div>
+        <p className="mt-6 text-sm text-center text-slate-600">
+          No account?{' '}
+          <Link to="/signup" className="text-indigo-600 font-medium hover:underline">Sign up</Link>
+        </p>
       </div>
     </div>
   );

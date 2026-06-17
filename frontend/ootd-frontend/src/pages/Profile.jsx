@@ -1,61 +1,39 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axiosInstance from "../utils/axiosInstance";
-import { useAuth } from "../context/AuthContext";
-import Spinner from "../components/Spinner";
-import { toast } from "sonner";
+import { useEffect, useState } from 'react';
+import axiosInstance from '../utils/axiosInstance';
+import { useAuth } from '../context/AuthContext';
 
-const BODY_TYPES = ["Hourglass", "Pear", "Apple", "Rectangle", "Inverted Triangle"];
+const BODY_TYPES = ['slim', 'athletic', 'average', 'curvy', 'plus'];
 
 export default function Profile() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [form, setForm] = useState({
-    height: "",
-    bodyType: "",
-    location: "",
-    stylePreferences: "",
-  });
+  const { logout } = useAuth();
+  const [form, setForm] = useState({ height: '', bodyType: '', location: '', stylePreferences: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState(null);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await axiosInstance.get("/user/profile");
-        setForm({
-          height: data?.height || "",
-          bodyType: data?.bodyType || "",
-          location: data?.location || "",
-          stylePreferences: Array.isArray(data?.stylePreferences)
-            ? data.stylePreferences.join(", ")
-            : data?.stylePreferences || "",
-        });
-      } catch (err) {
-        toast.error(err?.response?.data?.message || "Failed to load profile");
-      } finally {
-        setLoading(false);
-      }
-    })();
+    axiosInstance.get('/user/profile')
+      .then((res) => setForm({
+        height: res.data.height || '',
+        bodyType: res.data.bodyType || '',
+        location: res.data.location || '',
+        stylePreferences: res.data.stylePreferences || '',
+      }))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleSave = async (e) => {
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
+    setMessage(null);
     try {
-      const payload = {
-        height: form.height,
-        bodyType: form.bodyType,
-        location: form.location,
-        stylePreferences: form.stylePreferences
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-      };
-      await axiosInstance.put("/user/profile", payload);
-      toast.success("Profile saved");
+      await axiosInstance.put('/user/profile', form);
+      setMessage({ type: 'success', text: 'Profile updated!' });
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Save failed");
+      setMessage({ type: 'error', text: err?.response?.data?.message || 'Update failed.' });
     } finally {
       setSaving(false);
     }
@@ -63,88 +41,60 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Spinner />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-slate-500">Loading profile…</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-stone-50 to-rose-50 px-4 py-12">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-slate-50 py-10 px-4">
+      <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-serif text-stone-900">Your Profile</h1>
-            <p className="text-sm text-stone-500 mt-1">{user?.email}</p>
+            <h1 className="text-3xl font-bold text-slate-900">Your profile</h1>
+            <p className="text-slate-500">Tell us about your style</p>
           </div>
-          <button
-            onClick={logout}
-            className="text-sm text-stone-600 hover:text-stone-900 underline underline-offset-4"
-          >
-            Logout
-          </button>
+          <button onClick={logout}
+            className="text-sm text-slate-600 hover:text-red-600 font-medium">Logout</button>
         </div>
 
-        <form
-          onSubmit={handleSave}
-          className="rounded-2xl bg-white shadow-xl shadow-stone-200/60 p-8 border border-stone-100 space-y-5"
-        >
-          <div>
-            <label className="block text-xs font-medium text-stone-700 mb-1.5">Height (cm)</label>
-            <input
-              type="number"
-              value={form.height}
-              onChange={(e) => setForm({ ...form, height: e.target.value })}
-              placeholder="170"
-              className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900 transition"
-            />
-          </div>
+        {message && (
+          <div className={`mb-4 p-3 rounded-lg text-sm border ${
+            message.type === 'success'
+              ? 'bg-green-50 text-green-700 border-green-200'
+              : 'bg-red-50 text-red-700 border-red-200'
+          }`}>{message.text}</div>
+        )}
 
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-medium text-stone-700 mb-1.5">Body Type</label>
-            <select
-              value={form.bodyType}
-              onChange={(e) => setForm({ ...form, bodyType: e.target.value })}
-              className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900 transition"
-            >
-              <option value="">Select body type</option>
-              {BODY_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
+            <label className="block text-sm font-medium text-slate-700 mb-1">Height (cm)</label>
+            <input type="number" name="height" value={form.height} onChange={handleChange}
+              className="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Body type</label>
+            <select name="bodyType" value={form.bodyType} onChange={handleChange}
+              className="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+              <option value="">Select…</option>
+              {BODY_TYPES.map((b) => <option key={b} value={b}>{b}</option>)}
             </select>
           </div>
-
           <div>
-            <label className="block text-xs font-medium text-stone-700 mb-1.5">Location</label>
-            <input
-              type="text"
-              value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
-              placeholder="Mumbai, India"
-              className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900 transition"
-            />
+            <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
+            <input type="text" name="location" value={form.location} onChange={handleChange}
+              className="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" />
           </div>
-
           <div>
-            <label className="block text-xs font-medium text-stone-700 mb-1.5">
-              Style Preferences <span className="text-stone-400">(comma-separated)</span>
-            </label>
-            <textarea
-              value={form.stylePreferences}
-              onChange={(e) => setForm({ ...form, stylePreferences: e.target.value })}
-              placeholder="minimal, streetwear, boho"
-              rows={3}
-              className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900 transition"
-            />
+            <label className="block text-sm font-medium text-slate-700 mb-1">Style preferences</label>
+            <textarea name="stylePreferences" rows={4} value={form.stylePreferences} onChange={handleChange}
+              placeholder="e.g. minimalist, streetwear, vintage…"
+              className="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" />
           </div>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-stone-900 text-white py-2.5 text-sm font-medium hover:bg-stone-800 disabled:opacity-60 transition"
-          >
-            {saving && <Spinner />}
-            {saving ? "Saving..." : "Save Profile"}
+          <button type="submit" disabled={saving}
+            className="w-full py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60 transition">
+            {saving ? 'Saving…' : 'Save changes'}
           </button>
         </form>
       </div>
