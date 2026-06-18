@@ -12,7 +12,7 @@ export default function Profile() {
   const [message, setMessage] = useState(null);
 
   useEffect(() => {
-    axiosInstance.get('/user/profile')
+    axiosInstance.get('/profile')
       .then((res) => setForm({
         height: res.data.height || '',
         bodyType: res.data.bodyType || '',
@@ -30,7 +30,7 @@ export default function Profile() {
     setSaving(true);
     setMessage(null);
     try {
-      await axiosInstance.put('/user/profile', form);
+      await axiosInstance.put('/profile', form);
       setMessage({ type: 'success', text: 'Profile updated!' });
     } catch (err) {
       setMessage({ type: 'error', text: err?.response?.data?.message || 'Update failed.' });

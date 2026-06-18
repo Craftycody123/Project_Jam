@@ -1,4 +1,4 @@
-import { mockRecommendations } from "../utils/mockData";
+import {mockRecommendations } from "../utils/mockData";
 import WeatherBadge from "../components/WeatherBadge";
 
 export default function Recommendations() {

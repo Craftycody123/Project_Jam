@@ -26,12 +26,8 @@ ssl_context = ssl.create_default_context()
 
 engine = create_async_engine(
     DATABASE_URL,
-    echo=os.getenv("ENVIRONMENT") != "production",
     connect_args={"ssl": ssl_context},
     pool_pre_ping=True,
-    pool_recycle=300,
-    pool_size=5,
-    max_overflow=10,
 )
 
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
