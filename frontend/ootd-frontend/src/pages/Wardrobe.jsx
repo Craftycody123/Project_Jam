@@ -1,25 +1,65 @@
-import { mockGarments } from "../utils/mockData";
+import { useEffect, useState } from "react";
+import { garmentAPI } from "../services/api";
 import GarmentCard from "../components/GarmentCard";
 
 export default function Wardrobe() {
-  return (
-    <div>
-      <h2>My Wardrobe</h2>
+  const [garments, setGarments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3,1fr)",
-          gap: "20px",
-        }}
-      >
-        {mockGarments.map((item) => (
-          <GarmentCard
-            key={item.id}
-            item={item}
-          />
-        ))}
+  useEffect(() => {
+    loadGarments();
+  }, []);
+
+  const loadGarments = async () => {
+    try {
+      const res = await garmentAPI.getGarments();
+      setGarments(res.data);
+    } catch (err) {
+      console.log(err);
+      alert("Failed to load wardrobe");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await garmentAPI.deleteGarment(id);
+
+      setGarments((prev) =>
+        prev.filter((item) => item.id !== id)
+      );
+    } catch (err) {
+      console.log(err);
+      alert("Delete failed");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="page">
+        <h2>Loading wardrobe...</h2>
       </div>
+    );
+  }
+
+  return (
+    <div className="page">
+      <h1 className="title">My Wardrobe</h1>
+
+      {garments.length === 0 ? (
+        <p>No clothes uploaded yet. Go to Upload page.</p>
+      ) : (
+        <div className="grid">
+          {garments.map((item) => (
+            <GarmentCard
+              key={item.id}
+              item={item}
+              onDelete={handleDelete}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

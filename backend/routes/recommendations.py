@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
-
+import auth
 from database import get_db
 from models.garment_model import Garment
 from models.recommendation_model import Recommendation
@@ -23,15 +23,15 @@ class GenerateRequest(BaseModel):
 async def generate(
     body:    GenerateRequest,
     db:      AsyncSession = Depends(get_db),
-    user_id: int          = 1
+    current_user = Depends(auth.get_current_user)
 ):
-    result   = await db.execute(select(Garment).where(Garment.user_id == user_id))
+    result   = await db.execute(select(Garment).where(Garment.user_id == current_user.id))
     garments = result.scalars().all()
 
     if not garments:
         raise HTTPException(status_code=404, detail="No garments in wardrobe")
 
-    fb_result    = await db.execute(select(Feedback).where(Feedback.user_id == user_id))
+    fb_result    = await db.execute(select(Feedback).where(Feedback.user_id == current_user.id))
     feedbacks    = fb_result.scalars().all()
     feedback_map = {f.garment_id: f.feedback for f in feedbacks}
 
@@ -44,7 +44,7 @@ async def generate(
     recommended_ids = [g.id for g in recommended]
 
     rec = Recommendation(
-        user_id           = user_id,
+        user_id           = current_user.id,
         recommended_items = recommended_ids,
         occasion          = body.occasion,
         weather           = body.weather,
@@ -77,11 +77,11 @@ async def generate(
 @router.get("/history")
 async def get_history(
     db:      AsyncSession = Depends(get_db),
-    user_id: int          = 1
+    current_user = Depends(auth.get_current_user)
 ):
     result = await db.execute(
         select(Recommendation)
-        .where(Recommendation.user_id == user_id)
+        .where(Recommendation.user_id == current_user.id)
         .order_by(Recommendation.created_at.desc())
     )
     recs   = result.scalars().all()
@@ -89,7 +89,8 @@ async def get_history(
     history = []
     for rec in recs:
         g_result = await db.execute(
-            select(Garment).where(Garment.id.in_(rec.recommended_items))
+            select(Garment).where(Garment.id.in_(rec.recommended_items)),
+            Garment.user_id == current_user.id
         )
         garments = g_result.scalars().all()
 
