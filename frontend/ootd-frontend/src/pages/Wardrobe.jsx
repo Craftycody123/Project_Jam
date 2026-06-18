@@ -1,52 +1,66 @@
 import { useEffect, useState } from "react";
-import axiosInstance from "../utils/axiosInstance";
+import { garmentAPI } from "../services/api";
 import GarmentCard from "../components/GarmentCard";
 
 export default function Wardrobe() {
-  const [garments, setGarments] = useState([]);
-  const [loading, setLoading] = useState(true);
+const [garments, setGarments] = useState([]);
+const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchGarments();
-  }, []);
+useEffect(() => {
+loadGarments();
+}, []);
 
-  const fetchGarments = async () => {
-    try {
-      const response = await axiosInstance.get("/garments");
-      setGarments(response.data);
-    } catch (error) {
-      console.error("Failed to fetch garments:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+const loadGarments = async () => {
+try {
+const res = await garmentAPI.getGarments();
+setGarments(res.data);
+} catch (err) {
+console.error(err);
+alert("Failed to load wardrobe");
+} finally {
+setLoading(false);
+}
+};
 
-  if (loading) {
-    return <h3>Loading wardrobe...</h3>;
-  }
+const handleDelete = async (id) => {
+try {
+await garmentAPI.deleteGarment(id);
 
-  return (
-    <div>
-      <h2>My Wardrobe</h2>
 
-      {garments.length === 0 ? (
-        <p>No garments uploaded yet.</p>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "20px",
-          }}
-        >
-          {garments.map((item) => (
-            <GarmentCard
-              key={item.id}
-              item={item}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+  setGarments((prev) =>
+    prev.filter((item) => item.id !== id)
   );
+} catch (err) {
+  console.error(err);
+  alert("Delete failed");
+}
+
+
+};
+
+if (loading) {
+return ( <div className="page"> <h2>Loading wardrobe...</h2> </div>
+);
+}
+
+return ( <div className="page"> <h1 className="title">My Wardrobe</h1>
+
+
+  {garments.length === 0 ? (
+    <p>No clothes uploaded yet. Go to Upload page.</p>
+  ) : (
+    <div className="grid">
+      {garments.map((item) => (
+        <GarmentCard
+          key={item.id}
+          item={item}
+          onDelete={handleDelete}
+        />
+      ))}
+    </div>
+  )}
+</div>
+
+
+);
 }
