@@ -1,6 +1,6 @@
 import shirtblack from "../assets/images/shirtblack.png";
 import pants from "../assets/images/pants.png";
-export const mockRecommendations = [
+export const mockGarments = [
 
 {
  id:1,

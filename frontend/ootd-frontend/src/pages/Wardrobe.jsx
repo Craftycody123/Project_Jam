@@ -1,4 +1,4 @@
-import { mockRecommendations } from "../utils/mockData";
+import { mockGarments } from "../utils/mockData";
 import GarmentCard from "../components/GarmentCard";
 
 export default function Wardrobe() {
@@ -13,7 +13,7 @@ export default function Wardrobe() {
           gap: "20px",
         }}
       >
-        {mockRecommendations.map((item) => (
+        {mockGarments.map((item) => (
           <GarmentCard
             key={item.id}
             item={item}
