@@ -2,43 +2,60 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional
-from datetime import datetime
 import json
 
 from database import get_db
 from models.garment_model import Garment
 from services.cloudinary_service import upload_image, delete_image
+import auth
 
 router = APIRouter(prefix="/garments", tags=["Garments"])
 
 
-# ─── Helper ──────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+# Helper
+# ──────────────────────────────────────────────────────────────────────────────
 
-async def get_garment_or_404(garment_id: int, user_id: int, db: AsyncSession) -> Garment:
+async def get_garment_or_404(
+    garment_id: int,
+    user_id: int,
+    db: AsyncSession
+) -> Garment:
     result = await db.execute(
-        select(Garment).where(Garment.id == garment_id, Garment.user_id == user_id)
+        select(Garment).where(
+            Garment.id == garment_id,
+            Garment.user_id == user_id
+        )
     )
+
     garment = result.scalar_one_or_none()
+
     if not garment:
-        raise HTTPException(status_code=404, detail="Garment not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Garment not found"
+        )
+
     return garment
 
 
-# ─── POST /garments/upload ───────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+# POST /garments/upload
+# ──────────────────────────────────────────────────────────────────────────────
 
 @router.post("/upload")
 async def upload_garment(
-    file:     UploadFile = File(...),
-    category: str        = Form(...),
-    color:    str        = Form(...),
-    fabric:   str        = Form(...),
-    style:    str        = Form(...),
-    tags:     str        = Form("[]"),
-    db:       AsyncSession = Depends(get_db),
-    # TODO: replace with real JWT user_id from auth middleware
-    user_id:  int        = 1
+    file: UploadFile = File(...),
+    category: str = Form(...),
+    color: str = Form(...),
+    fabric: str = Form(...),
+    style: str = Form(...),
+    tags: str = Form("[]"),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(auth.get_current_user)
 ):
     contents = await file.read()
+
     upload_result = upload_image(contents)
 
     try:
@@ -47,124 +64,170 @@ async def upload_garment(
         tags_list = []
 
     garment = Garment(
-        user_id   = user_id,
-        image_url = upload_result["image_url"],
-        public_id = upload_result["public_id"],
-        category  = category,
-        color     = color,
-        fabric    = fabric,
-        style     = style,
-        tags      = tags_list,
-        is_new    = True,
+        user_id=current_user.id,
+        image_url=upload_result["image_url"],
+        public_id=upload_result["public_id"],
+        category=category,
+        color=color,
+        fabric=fabric,
+        style=style,
+        tags=tags_list,
+        is_new=True,
     )
+
     db.add(garment)
     await db.commit()
     await db.refresh(garment)
 
     return {
-        "id":          garment.id,
-        "image_url":   garment.image_url,
-        "category":    garment.category,
-        "color":       garment.color,
-        "fabric":      garment.fabric,
-        "style":       garment.style,
-        "tags":        garment.tags,
-        "is_new":      garment.is_new,
+        "id": garment.id,
+        "image_url": garment.image_url,
+        "category": garment.category,
+        "color": garment.color,
+        "fabric": garment.fabric,
+        "style": garment.style,
+        "tags": garment.tags,
+        "is_new": garment.is_new,
         "uploaded_at": garment.uploaded_at,
     }
 
 
-# ─── GET /garments ───────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+# GET /garments
+# ──────────────────────────────────────────────────────────────────────────────
 
 @router.get("/")
 async def get_wardrobe(
-    db:      AsyncSession = Depends(get_db),
-    user_id: int          = 1
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(auth.get_current_user)
 ):
-    result   = await db.execute(select(Garment).where(Garment.user_id == user_id))
+    result = await db.execute(
+        select(Garment).where(
+            Garment.user_id == current_user.id
+        )
+    )
+
     garments = result.scalars().all()
 
     return [
         {
-            "id":          g.id,
-            "image_url":   g.image_url,
-            "category":    g.category,
-            "color":       g.color,
-            "fabric":      g.fabric,
-            "style":       g.style,
-            "tags":        g.tags,
-            "is_new":      g.is_new,
-            "times_worn":  g.times_worn,
+            "id": g.id,
+            "image_url": g.image_url,
+            "category": g.category,
+            "color": g.color,
+            "fabric": g.fabric,
+            "style": g.style,
+            "tags": g.tags,
+            "is_new": g.is_new,
+            "times_worn": g.times_worn,
+            "last_worn": g.last_worn,
             "uploaded_at": g.uploaded_at,
         }
         for g in garments
     ]
 
 
-# ─── GET /garments/{id} ──────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+# GET /garments/{garment_id}
+# ──────────────────────────────────────────────────────────────────────────────
 
 @router.get("/{garment_id}")
 async def get_garment(
     garment_id: int,
-    db:         AsyncSession = Depends(get_db),
-    user_id:    int          = 1
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(auth.get_current_user)
 ):
-    g = await get_garment_or_404(garment_id, user_id, db)
+    garment = await get_garment_or_404(
+        garment_id,
+        current_user.id,
+        db
+    )
+
     return {
-        "id":          g.id,
-        "image_url":   g.image_url,
-        "category":    g.category,
-        "color":       g.color,
-        "fabric":      g.fabric,
-        "style":       g.style,
-        "tags":        g.tags,
-        "is_new":      g.is_new,
-        "times_worn":  g.times_worn,
-        "last_worn":   g.last_worn,
-        "uploaded_at": g.uploaded_at,
+        "id": garment.id,
+        "image_url": garment.image_url,
+        "category": garment.category,
+        "color": garment.color,
+        "fabric": garment.fabric,
+        "style": garment.style,
+        "tags": garment.tags,
+        "is_new": garment.is_new,
+        "times_worn": garment.times_worn,
+        "last_worn": garment.last_worn,
+        "uploaded_at": garment.uploaded_at,
     }
 
 
-# ─── PUT /garments/{id} ──────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+# PUT /garments/{garment_id}
+# ──────────────────────────────────────────────────────────────────────────────
 
 @router.put("/{garment_id}")
 async def update_garment(
     garment_id: int,
-    category:   Optional[str] = Form(None),
-    color:      Optional[str] = Form(None),
-    fabric:     Optional[str] = Form(None),
-    style:      Optional[str] = Form(None),
-    tags:       Optional[str] = Form(None),
-    db:         AsyncSession  = Depends(get_db),
-    user_id:    int           = 1
+    category: Optional[str] = Form(None),
+    color: Optional[str] = Form(None),
+    fabric: Optional[str] = Form(None),
+    style: Optional[str] = Form(None),
+    tags: Optional[str] = Form(None),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(auth.get_current_user)
 ):
-    g = await get_garment_or_404(garment_id, user_id, db)
+    garment = await get_garment_or_404(
+        garment_id,
+        current_user.id,
+        db
+    )
 
-    if category: g.category = category
-    if color:    g.color    = color
-    if fabric:   g.fabric   = fabric
-    if style:    g.style    = style
+    if category:
+        garment.category = category
+
+    if color:
+        garment.color = color
+
+    if fabric:
+        garment.fabric = fabric
+
+    if style:
+        garment.style = style
+
     if tags:
         try:
-            g.tags = json.loads(tags)
+            garment.tags = json.loads(tags)
         except Exception:
             pass
 
     await db.commit()
-    await db.refresh(g)
-    return {"message": "Garment updated", "id": g.id}
+    await db.refresh(garment)
+
+    return {
+        "message": "Garment updated",
+        "id": garment.id
+    }
 
 
-# ─── DELETE /garments/{id} ───────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+# DELETE /garments/{garment_id}
+# ──────────────────────────────────────────────────────────────────────────────
 
 @router.delete("/{garment_id}")
 async def delete_garment(
     garment_id: int,
-    db:         AsyncSession = Depends(get_db),
-    user_id:    int          = 1
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(auth.get_current_user)
 ):
-    g = await get_garment_or_404(garment_id, user_id, db)
-    delete_image(g.public_id)
-    await db.delete(g)
+    garment = await get_garment_or_404(
+        garment_id,
+        current_user.id,
+        db
+    )
+
+    delete_image(garment.public_id)
+
+    await db.delete(garment)
     await db.commit()
-    return {"message": "Garment deleted", "id": garment_id}
+
+    return {
+        "message": "Garment deleted",
+        "id": garment_id
+    }

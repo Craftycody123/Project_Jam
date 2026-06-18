@@ -1,43 +1,51 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
+  const { isAuthenticated, logout, user } = useAuth();
 
   return (
-
     <nav style={styles.nav}>
+      <h2 style={styles.logo}>OOTD AI</h2>
 
-      <h2 style={styles.logo}>
-        OOTD AI
-      </h2>
+      {isAuthenticated ? (
+        <div style={styles.links}>
+          <Link to="/wardrobe" style={styles.link}>
+            Wardrobe
+          </Link>
 
+          <Link to="/upload" style={styles.link}>
+            Upload
+          </Link>
 
-      <div style={styles.links}>
+          <Link to="/mannequin" style={styles.link}>
+            Mannequin
+          </Link>
 
-        <Link to="/" style={styles.link}>
-          Wardrobe
-        </Link>
+          <Link to="/history" style={styles.link}>
+            History
+          </Link>
 
+          <Link to="/profile" style={styles.link}>
+            {user?.name || "Profile"}
+          </Link>
 
-        <Link to="/upload" style={styles.link}>
-          Upload
-        </Link>
+          <button onClick={logout}>
+            Logout
+          </button>
+        </div>
+      ) : (
+        <div style={styles.links}>
+          <Link to="/login" style={styles.link}>
+            Login
+          </Link>
 
-
-        <Link to="/mannequin" style={styles.link}>
-          Mannequin
-        </Link>
-
-
-        <Link to="/history" style={styles.link}>
-          History
-        </Link>
-
-
-      </div>
-
-
+          <Link to="/signup" style={styles.link}>
+            Sign Up
+          </Link>
+        </div>
+      )}
     </nav>
-
   );
 }
 
