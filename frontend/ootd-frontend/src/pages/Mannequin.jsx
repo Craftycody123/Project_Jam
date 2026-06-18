@@ -168,18 +168,6 @@ export default function Mannequin() {
           <option value="sports">Sports</option>
         </select>
 
-        <select
-          className="input"
-          style={styles.smallInput}
-          value={weather}
-          onChange={(e) => setWeather(e.target.value)}
-        >
-          <option value="cloudy">Cloudy</option>
-          <option value="hot">Hot</option>
-          <option value="cold">Cold</option>
-          <option value="rainy">Rainy</option>
-        </select>
-
         <button className="btn" onClick={applyRecommendation}>
           ✨ Recommendation
         </button>
@@ -266,10 +254,10 @@ const styles = {
     height: "570px",
     margin: "auto",
     position: "relative",
-    background: "linear-gradient(#fff, #fce7f3)",
-    border: "3px dashed #ec4899",
+    background: "linear-gradient(#fff, #e7f8fc)",
+    border: "3px dashed #bbd6ea",
     borderRadius: "90px",
-    boxShadow: "0 10px 25px rgba(236,72,153,.25)",
+    boxShadow: "0 10px 25px rgba(236, 240, 245, 0.25)",
   },
 
   head: {
@@ -286,7 +274,7 @@ const styles = {
   body: {
     width: "115px",
     height: "175px",
-    background: "#f9a8d4",
+    background: "#bee2ea",
     position: "absolute",
     top: "100px",
     left: "50%",
@@ -297,7 +285,7 @@ const styles = {
   legLeft: {
     width: "30px",
     height: "165px",
-    background: "#f472b6",
+    background: "#bee2ea",
     position: "absolute",
     bottom: "35px",
     left: "38%",
@@ -307,7 +295,7 @@ const styles = {
   legRight: {
     width: "30px",
     height: "165px",
-    background: "#f472b6",
+    background: "#bee2ea",
     position: "absolute",
     bottom: "35px",
     right: "38%",
