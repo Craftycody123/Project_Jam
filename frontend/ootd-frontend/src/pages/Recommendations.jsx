@@ -1,4 +1,4 @@
-import {mockRecommendations } from "../utils/mockData";
+import { mockGarments } from "../utils/mockData";
 import WeatherBadge from "../components/WeatherBadge";
 
 export default function Recommendations() {
@@ -11,12 +11,12 @@ export default function Recommendations() {
         temperature="28°C"
       />
 
-      {mockRecommendations.map((r) => (
-        <div key={r.id}>
-          <h3>{r.occasion}</h3>
+      {mockGarments.map((g) => (
+        <div key={g.id}>
+          <h3>{g.name}</h3>
 
           <ul>
-            {r.items.map((item, i) => (
+            {g.items.map((item, i) => (
               <li key={i}>{item}</li>
             ))}
           </ul>
