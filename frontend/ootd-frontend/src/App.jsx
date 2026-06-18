@@ -10,8 +10,6 @@ import Wardrobe from "./pages/Wardrobe";
 import Upload from "./pages/Upload";
 import Mannequin from "./pages/Mannequin";
 import History from "./pages/History";
-import Recommendations from "./pages/Recommendations";
-
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
@@ -41,9 +39,6 @@ function App() {
         } />
         <Route path="/history" element={
           <ProtectedRoute><History /></ProtectedRoute>
-        } />
-        <Route path="/recommendations" element={
-          <ProtectedRoute><Recommendations /></ProtectedRoute>
         } />
       </Routes>
     </BrowserRouter>
