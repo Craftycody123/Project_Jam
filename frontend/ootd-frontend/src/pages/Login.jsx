@@ -17,7 +17,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(form.email, form.password);
-      navigate({ to: '/profile' });
+      navigate('/profile');
     } catch (err) {
       setServerError(err?.response?.data?.message || 'Login failed. Check your credentials.');
     } finally {

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import axiosInstance from "../utils/axiosInstance";
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -11,44 +11,94 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
-    if (savedToken) setToken(savedToken);
-    if (savedUser) {
-      try { setUser(JSON.parse(savedUser)); } catch {}
+
+    console.log("Saved Token:", savedToken);
+    console.log("Saved User:", savedUser);
+
+    if (savedToken) {
+      setToken(savedToken);
     }
+
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        console.error("Error parsing saved user:", error);
+      }
+    }
+
     setLoading(false);
   }, []);
 
   const login = async (email, password) => {
-    const { data } = await axiosInstance.post("/auth/login", { email, password });
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-    setToken(data.token);
-    setUser(data.user);
-    return data;
+    try {
+      const response = await axiosInstance.post("/auth/login", {
+        email,
+        password,
+      });
+
+      console.log("Login Response:", response.data);
+
+      const token = response.data.token;
+      const user = response.data.user;
+
+      if (!token) {
+        throw new Error("Token not received from backend");
+      }
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      console.log("Stored Token:", localStorage.getItem("token"));
+
+      setToken(token);
+      setUser(user);
+
+      return response.data;
+    } catch (error) {
+      console.error("Login Error:", error);
+      throw error;
+    }
   };
 
   const signup = async (name, email, password) => {
-    const { data } = await axiosInstance.post("/auth/register", { name, email, password });
-    return data;
+    try {
+      const response = await axiosInstance.post("/auth/register", {
+        name,
+        email,
+        password,
+      });
+
+      console.log("Signup Response:", response.data);
+
+      return response.data;
+    } catch (error) {
+      console.error("Signup Error:", error);
+      throw error;
+    }
   };
 
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
     setToken(null);
     setUser(null);
+
     window.location.href = "/login";
   };
 
-  const checkAuth = () => !!localStorage.getItem("token");
+  const checkAuth = () => {
+    return !!localStorage.getItem("token");
+  };
 
   return (
     <AuthContext.Provider
       value={{
         user,
         token,
-        isAuthenticated: !!token,
         loading,
+        isAuthenticated: !!token,
         login,
         signup,
         logout,
@@ -62,7 +112,11 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+
+  return context;
 };
