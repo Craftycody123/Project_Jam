@@ -5,7 +5,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Profile from "./pages/Profile";
 import Wardrobe from "./pages/Wardrobe";
-
+import OutfitBuilder from "./pages/OutfitBuilder";
 import Upload from "./pages/Upload";
 import Mannequin from "./pages/Mannequin";
 import History from "./pages/History";
@@ -48,6 +48,14 @@ export default function App() {
               <Upload />
             </ProtectedRoute>
           }
+        />
+        <Route
+            path="/OutfitBuilder"
+            element={
+              <ProtectedRoute>
+                <OutfitBuilder />
+              </ProtectedRoute>
+            }
         />
 
         <Route
