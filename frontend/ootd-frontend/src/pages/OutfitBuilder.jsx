@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { garmentAPI } from "../services/api";
+import AppNav from "../components/AppNav";
 
 export default function OutfitBuilder() {
   const [tops, setTops] = useState([]);
@@ -56,8 +57,12 @@ export default function OutfitBuilder() {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Outfit Builder</h1>
+    <div className="min-h-screen flex bg-background">
+    
+        <AppNav />
+          
+      <main className="flex-1 p-6" style={{ textAlign: "center" }}>
+        <h1>Outfit Builder</h1>
 
       {/* TOP SECTION */}
       <div style={{ marginBottom: "40px" }}>
@@ -151,7 +156,11 @@ export default function OutfitBuilder() {
             View On Mannequin →
           </button>
         </div>
+      
       )}
+      </main>
     </div>
   );
+
+
 }

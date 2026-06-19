@@ -31,6 +31,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/outfitbuilder" element={<ProtectedRoute><OutfitBuilder /></ProtectedRoute>} />
 
         <Route
           path="/profile"

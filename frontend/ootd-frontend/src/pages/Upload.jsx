@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axiosInstance from "../utils/axiosInstance";
-
+import AppNav from "../components/AppNav";
 export default function Upload() {
 const [image, setImage] = useState(null);
 
@@ -80,7 +80,10 @@ try {
 
 };
 
-return ( <div className="page"> <h1 className="title">Upload Outfit</h1>
+return ( <div className="min-h-screen flex bg-background">
+<AppNav />
+<main className="flex-1 p-6" style={{ textAlign: "center" }}>
+<h1 className="title">Upload Outfit</h1>
 
   <form className="card" onSubmit={handleUpload}>
     <input
@@ -156,8 +159,12 @@ return ( <div className="page"> <h1 className="title">Upload Outfit</h1>
       </p>
     )}
   </form>
+  
+
+
+</main>
 </div>
-
-
 );
+
+
 }

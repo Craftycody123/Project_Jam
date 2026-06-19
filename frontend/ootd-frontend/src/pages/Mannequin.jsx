@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { recommendationAPI, weatherAPI } from "../services/api";
 import WeatherBadge from "../components/WeatherBadge";
-
+import AppNav from "../components/AppNav";
 export default function Mannequin() {
   const [currentOutfit, setCurrentOutfit] = useState({
     top: null,
@@ -143,7 +143,12 @@ export default function Mannequin() {
     .sort(([a], [b]) => layers[a] - layers[b]);
 
   return (
-    <div className="page" style={{ textAlign: "center" }}>
+    <div className="min-h-screen flex bg-background">
+      <AppNav />
+       <main
+      className="flex-1 p-6"
+      style={{ textAlign: "center" }}
+    >
       <h1 className="title">2D AI Mannequin</h1>
 
       {weatherData && (
@@ -230,6 +235,7 @@ export default function Mannequin() {
         Outfit: {savedOutfits.length === 0 ? 0 : currentIndex + 1}/
         {savedOutfits.length}
       </p>
+    </main>
     </div>
   );
 }
