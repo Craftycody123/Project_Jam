@@ -1,23 +1,4 @@
 export default function GarmentCard({ item, onDelete }) {
-  const addToMannequin = () => {
-    const outfit =
-      JSON.parse(localStorage.getItem("currentOutfit")) || {
-        top: null,
-        bottom: null,
-        outerwear: null,
-        dress: null,
-      };
-
-    outfit[item.category] = item;
-
-    localStorage.setItem(
-      "currentOutfit",
-      JSON.stringify(outfit)
-    );
-
-    alert(`${item.category} added to mannequin`);
-  };
-
   return (
     <div style={styles.card}>
       <img
@@ -50,13 +31,6 @@ export default function GarmentCard({ item, onDelete }) {
 
       <div style={styles.buttons}>
         <button
-          style={styles.addBtn}
-          onClick={addToMannequin}
-        >
-          Add To Mannequin
-        </button>
-
-        <button
           style={styles.deleteBtn}
           onClick={() => onDelete(item.id)}
         >
@@ -69,12 +43,13 @@ export default function GarmentCard({ item, onDelete }) {
 
 const styles = {
   card: {
-    background: "#fff",
+    background: "var(--card)",
     borderRadius: "20px",
     padding: "15px",
     boxShadow: "0 6px 15px rgba(0,0,0,.1)",
     textAlign: "center",
     position: "relative",
+    border: "1px solid var(--border)",
   },
 
   image: {
@@ -86,13 +61,16 @@ const styles = {
 
   title: {
     textTransform: "capitalize",
+    fontFamily: "Fraunces, Georgia, serif",
+    fontSize: "22px",
+    marginBottom: "10px",
   },
 
   badge: {
     position: "absolute",
     top: "12px",
     right: "12px",
-    background: "#ec4899",
+    background: "var(--accent)",
     color: "white",
     padding: "5px 10px",
     borderRadius: "10px",
@@ -101,28 +79,17 @@ const styles = {
   },
 
   buttons: {
-    display: "flex",
-    gap: "10px",
     marginTop: "15px",
   },
 
-  addBtn: {
-    flex: 1,
-    background: "#ec4899",
-    color: "white",
-    border: "none",
-    padding: "10px",
-    borderRadius: "10px",
-    cursor: "pointer",
-  },
-
   deleteBtn: {
-    flex: 1,
+    width: "100%",
     background: "#ef4444",
     color: "white",
     border: "none",
     padding: "10px",
     borderRadius: "10px",
     cursor: "pointer",
+    fontWeight: "600",
   },
 };

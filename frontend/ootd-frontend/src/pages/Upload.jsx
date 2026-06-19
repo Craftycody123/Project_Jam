@@ -83,9 +83,15 @@ try {
 return ( <div className="min-h-screen flex bg-background">
 <AppNav />
 <main className="flex-1 p-6" style={{ textAlign: "center" }}>
-<h1 className="title">Upload Outfit</h1>
-
-  <form className="card" onSubmit={handleUpload}>
+<h1 className="title">Upload Garment</h1>
+<form
+  className="card"
+  onSubmit={handleUpload}
+  style={{
+    maxWidth: "700px",
+    margin: "0 auto",
+  }}
+>
     <input
       className="input"
       type="file"
@@ -93,18 +99,18 @@ return ( <div className="min-h-screen flex bg-background">
       onChange={(e) => setImage(e.target.files[0])}
     />
 
-    <select
-      className="input"
-      name="category"
-      value={form.category}
-      onChange={handleChange}
-    >
-      <option value="top">Top</option>
-      <option value="bottom">Bottom</option>
-      <option value="outerwear">Outerwear</option>
-      <option value="dress">Dress</option>
-    </select>
-
+<select
+  className="input"
+  name="category"
+  value={form.category}
+  onChange={handleChange}
+>
+  <option value="">Select Category</option>
+  <option value="top">Top</option>
+  <option value="bottom">Bottom</option>
+  <option value="outerwear">Outerwear</option>
+  <option value="dress">Dress</option>
+</select>
     <input
       className="input"
       name="color"
@@ -113,28 +119,32 @@ return ( <div className="min-h-screen flex bg-background">
       onChange={handleChange}
     />
 
-    <select
-      className="input"
-      name="fabric"
-      value={form.fabric}
-      onChange={handleChange}
-    >
-      <option value="light">Light</option>
-      <option value="medium">Medium</option>
-      <option value="heavy">Heavy</option>
-    </select>
+<select
+  className="input"
+  name="fabric"
+  value={form.fabric}
+  onChange={handleChange}
+>
+  <option value="">Select Fabric</option>
+  <option value="light">Light</option>
+  <option value="medium">Medium</option>
+  <option value="heavy">Heavy</option>
+</select>
 
-    <select
-      className="input"
-      name="style"
-      value={form.style}
-      onChange={handleChange}
-    >
-      <option value="casual">Casual</option>
-      <option value="formal">Formal</option>
-      <option value="party">Party</option>
-      <option value="sports">Sports</option>
-    </select>
+<select
+  className="input"
+  name="style"
+  value={form.style}
+  onChange={handleChange}
+>
+  <option value="">Select Style</option>
+  <option value="casual">Casual</option>
+  <option value="formal">Formal</option>
+  <option value="party">Party</option>
+  <option value="sports">Sports</option>
+</select>
+
+    
 
     <input
       className="input"
@@ -150,7 +160,7 @@ return ( <div className="min-h-screen flex bg-background">
       disabled={loading}
       style={{ marginTop: "15px" }}
     >
-      {loading ? "Uploading..." : "Upload Cloth"}
+      {loading ? "Uploading..." : "Upload"}
     </button>
 
     {message && (

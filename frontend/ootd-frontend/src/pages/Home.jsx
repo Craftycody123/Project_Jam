@@ -8,7 +8,6 @@ export default function Home() {
     <div className="bg-background">
       <HomeNav />
       <CupboardHero />
-      <RackSection />
       <FeatureGrid />
       <CTA />
       <footer className="border-t border-border bg-background py-10">
@@ -101,38 +100,6 @@ function CupboardHero() {
             <ChevronDown className="w-5 h-5" />
           </motion.div>
         </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function RackSection() {
-  const items = ["Camel Trench", "Cotton Shirt", "Wool Blazer", "Black Dress", "Knit Sweater", "Midi Skirt"];
-  return (
-    <section className="relative overflow-hidden bg-[oklch(0.93_0.016_82)] py-24">
-      <div className="mx-auto max-w-6xl px-5 mb-10">
-        <span className="text-xs font-medium uppercase tracking-[0.25em] text-accent">Your Wardrobe</span>
-        <h2 className="mt-3 max-w-xl font-serif text-4xl sm:text-5xl font-semibold leading-tight">
-          The rack rolls in, and everything you own is in reach.
-        </h2>
-        <p className="mt-4 max-w-md leading-relaxed text-muted-foreground">
-          Browse a clean grid of every garment, filter by category, and spot newly added pieces at a glance.
-        </p>
-      </div>
-      <div className="relative">
-        <div className="absolute left-0 right-0 top-6 h-1.5 rounded-full bg-[oklch(0.55_0.05_60)]" />
-        <div className="flex gap-6 overflow-x-auto px-5 pb-6 pt-3 [scrollbar-width:none]">
-          {items.map((name, i) => (
-            <motion.div key={name} initial={{ rotate: i % 2 ? -3 : 3 }} whileHover={{ rotate: 0, y: 8 }}
-              transition={{ type: "spring", stiffness: 200, damping: 12 }}
-              className="relative shrink-0 flex flex-col items-center">
-              <div className="w-10 h-6 border-2 border-[oklch(0.55_0.05_60)] border-b-0 rounded-t-full" />
-              <div className="w-44 h-56 rounded-xl bg-card border border-border shadow-lg flex items-end p-3">
-                <span className="text-xs font-medium text-muted-foreground">{name}</span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
       </div>
     </section>
   );
