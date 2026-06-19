@@ -6,6 +6,7 @@ import json
 
 from database import get_db
 from models.garment_model import Garment
+from services.bg_removal import remove_background_bytes
 from services.cloudinary_service import upload_image, delete_image
 import auth
 
@@ -56,7 +57,9 @@ async def upload_garment(
 ):
     contents = await file.read()
 
-    upload_result = upload_image(contents)
+    processed_image = remove_background_bytes(contents)
+
+    upload_result = upload_image(processed_image)
 
     try:
         tags_list = json.loads(tags)
@@ -98,14 +101,20 @@ async def upload_garment(
 
 @router.get("/")
 async def get_wardrobe(
+    category: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(auth.get_current_user)
 ):
-    result = await db.execute(
-        select(Garment).where(
-            Garment.user_id == current_user.id
-        )
+    query = select(Garment).where(
+        Garment.user_id == current_user.id
     )
+
+    if category:
+        query = query.where(
+            Garment.category == category
+        )
+
+    result = await db.execute(query)
 
     garments = result.scalars().all()
 
@@ -125,8 +134,6 @@ async def get_wardrobe(
         }
         for g in garments
     ]
-
-
 # ──────────────────────────────────────────────────────────────────────────────
 # GET /garments/{garment_id}
 # ──────────────────────────────────────────────────────────────────────────────
