@@ -209,24 +209,24 @@ export default function Mannequin() {
             key={type}
             src={item.image_url}
             alt={type}
-            style={{
-              ...styles.cloth,
-              zIndex: layers[type],
-              top:
-                type === "bottom"
-                  ? 245
-                  : type === "outerwear"
-                  ? 120
-                  : type === "dress"
-                  ? 135
-                  : 105,
-              width:
-                type === "bottom"
-                  ? "150px"
-                  : type === "dress"
-                  ? "160px"
-                  : "145px",
-            }}
+           style={{
+  ...styles.cloth,
+  zIndex: layers[type],
+  top:
+    type === "bottom"
+      ? 310
+      : type === "outerwear"
+      ? 115
+      : type === "dress"
+      ? 145
+      : 105,
+  width:
+    type === "bottom"
+      ? "130px"
+      : type === "dress"
+      ? "160px"
+      : "145px",
+}}
           />
         ))}
       </div>

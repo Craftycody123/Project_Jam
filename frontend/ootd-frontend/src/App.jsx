@@ -9,7 +9,6 @@ import OutfitBuilder from "./pages/OutfitBuilder";
 import Upload from "./pages/Upload";
 import Mannequin from "./pages/Mannequin";
 import History from "./pages/History";
-
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
