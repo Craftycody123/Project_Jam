@@ -141,31 +141,47 @@ export default function OutfitBuilder() {
           <p style={styles.kicker}>Preview</p>
           <h2 style={styles.sectionTitle}>Selected Outfit</h2>
 
-          <div style={styles.previewStack}>
+          {/* OVERLAPPING MANNEQUIN-STYLE PREVIEW */}
+          <div style={styles.mannequinBox}>
             {selectedDress ? (
-              <PreviewItem item={selectedDress} label="Dress" styles={styles} />
+              // Dress covers the full body region, top + bottom are skipped
+              <img
+                src={selectedDress.image_url}
+                alt="dress"
+                style={styles.regionDress}
+              />
             ) : (
               <>
                 {selectedTop && (
-                  <PreviewItem item={selectedTop} label="Top" styles={styles} />
+                  <img
+                    src={selectedTop.image_url}
+                    alt="top"
+                    style={styles.regionTop}
+                  />
                 )}
-
-                {selectedTop && selectedBottom && <div style={styles.arrow}>↓</div>}
 
                 {selectedBottom && (
-                  <PreviewItem item={selectedBottom} label="Bottom" styles={styles} />
+                  <img
+                    src={selectedBottom.image_url}
+                    alt="bottom"
+                    style={styles.regionBottom}
+                  />
                 )}
               </>
             )}
 
+            {/* Outerwear always layers on top, above dress/top */}
             {selectedOuterwear && (
-              <>
-                <div style={styles.arrow}>+</div>
-                <PreviewItem item={selectedOuterwear} label="Outerwear" styles={styles} />
-              </>
+              <img
+                src={selectedOuterwear.image_url}
+                alt="outerwear"
+                style={styles.regionOuterwear}
+              />
             )}
 
-            {!canView && <p style={styles.emptyText}>Select garments to preview</p>}
+            {!canView && (
+              <p style={styles.mannequinEmptyText}>Select garments to preview</p>
+            )}
           </div>
 
           {canView && (
@@ -212,15 +228,6 @@ function ClothSection({ title, item, count, empty, onNext, onSelect, styles }) {
         <p style={styles.emptyText}>{empty}</p>
       )}
     </section>
-  );
-}
-
-function PreviewItem({ item, label, styles }) {
-  return (
-    <div style={styles.previewItem}>
-      <img src={item.image_url} alt={label} style={styles.previewImage} />
-      <p style={styles.previewLabel}>{label}</p>
-    </div>
   );
 }
 
@@ -346,38 +353,72 @@ const styles = {
     textAlign: "center",
   },
 
-  previewStack: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "12px",
-    marginTop: "18px",
-  },
-
-  previewItem: {
-    textAlign: "center",
-  },
-
-  previewImage: {
-    width: "180px",
-    height: "190px",
-    objectFit: "contain",
-    borderRadius: "18px",
+  // --- Overlapping mannequin-style preview (merged from the layered version) ---
+  mannequinBox: {
+    position: "relative",
+    width: "320px",
+    height: "560px",
+    margin: "18px auto 0",
+    border: "2px dashed var(--border)",
+    borderRadius: "20px",
     background: "var(--secondary)",
-    padding: "12px",
+    overflow: "hidden",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  regionTop: {
+    position: "absolute",
+    left: "50%",
+    top: "10%",
+    transform: "translateX(-50%)",
+    width: "78%",
+    height: "42%",
+    objectFit: "contain",
     filter: "drop-shadow(0 8px 10px rgba(0,0,0,0.16))",
+    zIndex: 2,
   },
 
-  previewLabel: {
-    margin: "8px 0 0",
-    fontWeight: 700,
+  regionBottom: {
+    position: "absolute",
+    left: "50%",
+    top: "37%",
+    transform: "translateX(-50%)",
+    width: "72%",
+    height: "50%",
+    objectFit: "contain",
+    filter: "drop-shadow(0 8px 10px rgba(0,0,0,0.16))",
+    zIndex: 1,
+  },
+
+  regionDress: {
+    position: "absolute",
+    left: "50%",
+    top: "10%",
+    transform: "translateX(-50%)",
+    width: "78%",
+    height: "82%",
+    objectFit: "contain",
+    filter: "drop-shadow(0 8px 10px rgba(0,0,0,0.16))",
+    zIndex: 2,
+  },
+
+  regionOuterwear: {
+    position: "absolute",
+    left: "50%",
+    top: "8%",
+    transform: "translateX(-50%)",
+    width: "86%",
+    height: "46%",
+    objectFit: "contain",
+    filter: "drop-shadow(0 10px 12px rgba(0,0,0,0.2))",
+    zIndex: 3,
+  },
+
+  mannequinEmptyText: {
     color: "var(--muted-foreground)",
-  },
-
-  arrow: {
-    fontSize: "28px",
-    color: "var(--accent)",
-    fontWeight: 700,
+    fontWeight: 600,
   },
 
   viewBtn: {
