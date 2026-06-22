@@ -103,6 +103,9 @@ export default function OutfitBuilder() {
             empty="No tops available"
             onNext={() => setTopIndex((p) => (p + 1) % tops.length)}
             onSelect={() => setSelectedTop(currentTop)}
+            onDeselect={() => setSelectedTop(null)}
+            isSelected={selectedTop && selectedTop.id === currentTop?.id}
+            disabled={!!selectedDress}
             styles={styles}
           />
 
@@ -113,6 +116,9 @@ export default function OutfitBuilder() {
             empty="No pants/bottoms available"
             onNext={() => setBottomIndex((p) => (p + 1) % bottoms.length)}
             onSelect={() => setSelectedBottom(currentBottom)}
+            onDeselect={() => setSelectedBottom(null)}
+            isSelected={selectedBottom && selectedBottom.id === currentBottom?.id}
+            disabled={!!selectedDress}
             styles={styles}
           />
 
@@ -122,7 +128,13 @@ export default function OutfitBuilder() {
             count={dresses.length}
             empty="No dresses available"
             onNext={() => setDressIndex((p) => (p + 1) % dresses.length)}
-            onSelect={() => setSelectedDress(currentDress)}
+            onSelect={() => {
+              setSelectedDress(currentDress);
+              setSelectedTop(null);
+              setSelectedBottom(null);
+            }}
+            onDeselect={() => setSelectedDress(null)}
+            isSelected={selectedDress && selectedDress.id === currentDress?.id}
             styles={styles}
           />
 
@@ -133,6 +145,8 @@ export default function OutfitBuilder() {
             empty="No outerwear available"
             onNext={() => setOuterwearIndex((p) => (p + 1) % outerwears.length)}
             onSelect={() => setSelectedOuterwear(currentOuterwear)}
+            onDeselect={() => setSelectedOuterwear(null)}
+            isSelected={selectedOuterwear && selectedOuterwear.id === currentOuterwear?.id}
             styles={styles}
           />
         </div>
@@ -144,7 +158,6 @@ export default function OutfitBuilder() {
           {/* OVERLAPPING MANNEQUIN-STYLE PREVIEW */}
           <div style={styles.mannequinBox}>
             {selectedDress ? (
-              // Dress covers the full body region, top + bottom are skipped
               <img
                 src={selectedDress.image_url}
                 alt="dress"
@@ -170,7 +183,6 @@ export default function OutfitBuilder() {
               </>
             )}
 
-            {/* Outerwear always layers on top, above dress/top */}
             {selectedOuterwear && (
               <img
                 src={selectedOuterwear.image_url}
@@ -195,15 +207,19 @@ export default function OutfitBuilder() {
   );
 }
 
-function ClothSection({ title, item, count, empty, onNext, onSelect, styles }) {
+function ClothSection({ title, item, count, empty, onNext, onSelect, onDeselect, isSelected, disabled, styles }) {
   return (
-    <section style={styles.card}>
-      <h2 style={styles.sectionTitle}>{title}</h2>
+    <section style={{ ...styles.card, ...(isSelected ? styles.cardSelected : {}), ...(disabled ? styles.cardDisabled : {}) }}>
+      <div style={styles.cardHeader}>
+        <h2 style={styles.sectionTitle}>{title}</h2>
+        {isSelected && <span style={styles.selectedBadge}>✓ Selected</span>}
+        {disabled && <span style={styles.disabledBadge}>Dress active</span>}
+      </div>
 
       {item ? (
         <>
-          <div style={styles.imageBox}>
-            <img src={item.image_url} alt={title} style={styles.garmentImage} />
+          <div style={{ ...styles.imageBox, ...(disabled ? styles.imageBoxDisabled : {}) }}>
+            <img src={item.image_url} alt={title} style={{ ...styles.garmentImage, ...(disabled ? { opacity: 0.35 } : {}) }} />
           </div>
 
           <p style={styles.meta}>
@@ -215,13 +231,23 @@ function ClothSection({ title, item, count, empty, onNext, onSelect, styles }) {
           </p>
 
           <div style={styles.buttonRow}>
-            <button style={styles.secondaryBtn} onClick={onNext}>
+            <button style={styles.secondaryBtn} onClick={onNext} disabled={disabled}>
               Next
             </button>
 
-            <button style={styles.primaryBtn} onClick={onSelect}>
-              Select
-            </button>
+            {isSelected ? (
+              <button style={styles.deselectBtn} onClick={onDeselect}>
+                Remove
+              </button>
+            ) : (
+              <button
+                style={{ ...styles.primaryBtn, ...(disabled ? styles.primaryBtnDisabled : {}) }}
+                onClick={onSelect}
+                disabled={disabled}
+              >
+                Select
+              </button>
+            )}
           </div>
         </>
       ) : (
@@ -278,10 +304,34 @@ const styles = {
     padding: "24px",
     boxShadow: "0 14px 30px rgba(0,0,0,0.08)",
     textAlign: "center",
+    transition: "border-color 0.2s",
+  },
+
+  cardSelected: {
+    border: "2px solid var(--accent)",
+    boxShadow: "0 14px 30px rgba(0,0,0,0.12)",
+  },
+
+  cardHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "10px",
+    marginBottom: "18px",
+  },
+
+  selectedBadge: {
+    fontSize: "12px",
+    fontWeight: 700,
+    color: "var(--accent)",
+    background: "var(--secondary)",
+    borderRadius: "20px",
+    padding: "3px 10px",
+    letterSpacing: "0.03em",
   },
 
   sectionTitle: {
-    margin: "0 0 18px",
+    margin: 0,
     fontFamily: "Fraunces, Georgia, serif",
     fontSize: "28px",
     fontWeight: 600,
@@ -383,7 +433,7 @@ const styles = {
   regionBottom: {
     position: "absolute",
     left: "50%",
-    top: "37%",
+    top: "42%",
     transform: "translateX(-50%)",
     width: "72%",
     height: "50%",
@@ -430,6 +480,40 @@ const styles = {
     padding: "13px 22px",
     fontWeight: 700,
     cursor: "pointer",
+  },
+
+  deselectBtn: {
+    background: "transparent",
+    color: "var(--muted-foreground)",
+    border: "1px solid var(--border)",
+    borderRadius: "14px",
+    padding: "11px 18px",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+
+  cardDisabled: {
+    opacity: 0.6,
+    pointerEvents: "none",
+  },
+
+  disabledBadge: {
+    fontSize: "12px",
+    fontWeight: 700,
+    color: "var(--muted-foreground)",
+    background: "var(--secondary)",
+    borderRadius: "20px",
+    padding: "3px 10px",
+    letterSpacing: "0.03em",
+  },
+
+  imageBoxDisabled: {
+    filter: "grayscale(0.4)",
+  },
+
+  primaryBtnDisabled: {
+    opacity: 0.4,
+    cursor: "not-allowed",
   },
 
   emptyText: {
