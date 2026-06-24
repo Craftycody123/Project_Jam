@@ -52,3 +52,54 @@ body {
       transparent 1px, transparent 70px,
       color-mix(in oklch, var(--wood-dark) 20%, transparent) 72px);
 }
+.input {
+  display: block;
+  width: 100%;
+  max-width: 650px;
+  margin: 0 auto 18px auto;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  box-sizing: border-box;
+}
+.btn {
+  display: block;
+  width: 220px;
+  margin: 25px auto 0 auto;
+
+  background: var(--accent);
+  color: var(--accent-foreground);
+
+  border: none;
+  border-radius: 14px;
+
+  padding: 14px 20px;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.btn {
+  background: var(--wood);
+  color: white;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+.title {
+  text-align: left;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--foreground);
+  margin-bottom: 30px;
+}
