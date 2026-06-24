@@ -1,101 +1,326 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
 import { useAuth } from "../context/AuthContext";
 import AppNav from "../components/AppNav";
 
-const BODY_TYPES = ["slim", "athletic", "average", "curvy", "plus"];
+const BODY_TYPES = [
+  "hourglass",
+  "pear",
+  "apple",
+  "rectangle",
+  "inverted-triangle",
+  "slim",
+  "athletic",
+  "average",
+  "curvy",
+  "plus",
+];
+
+function Field({ label, children }) {
+  return (
+    <label className="block">
+      <span className="block text-xs uppercase tracking-[0.2em] text-[#3B2F25]/70 mb-2">
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
 
 export default function Profile() {
-  const { logout } = useAuth();
-  const [form, setForm] = useState({ height: "", bodyType: "", location: "", stylePreferences: "" });
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState({
+    // OLD FIELDS
+    name: "",
+    age: "",
+    gender: "female",
+    height: "",
+    weight: "",
+    body_type: "hourglass",
+
+    // NEW FIELDS
+    bodyType: "",
+    location: "",
+    stylePreferences: "",
+  });
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
   const [message, setMessage] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    axiosInstance.get("/profile")
-      .then((res) => setForm({
-        height: res.data.height || "",
-        bodyType: res.data.bodyType || "",
-        location: res.data.location || "",
-        stylePreferences: res.data.stylePreferences || "",
-      }))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    (async () => {
+      try {
+        const { data } = await axiosInstance.get("/profile");
+
+        if (data) {
+          setForm((f) => ({
+            ...f,
+
+            // OLD DATA
+            name: data.name || "",
+            age: data.age || "",
+            gender: data.gender || "female",
+            height: data.height || "",
+            weight: data.weight || "",
+            body_type: data.body_type || "hourglass",
+
+            // NEW DATA
+            bodyType: data.bodyType || "",
+            location: data.location || "",
+            stylePreferences: data.stylePreferences || "",
+          }));
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const update = (k) => (e) =>
+    setForm({ ...form, [k]: e.target.value });
 
-  const handleSubmit = async (e) => {
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const onSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true); setMessage(null);
+
+    setSaving(true);
+    setError(null);
+    setMessage(null);
+
     try {
-      await axiosInstance.put("/profile", form);
-      setMessage({ type: "success", text: "Profile updated!" });
+      await axiosInstance.post("/profile", {
+        ...form,
+
+        age: Number(form.age),
+        height: Number(form.height),
+        weight: Number(form.weight),
+      });
+
+      setMessage("Profile updated successfully!");
     } catch (err) {
-      setMessage({ type: "error", text: err?.response?.data?.message || "Update failed." });
-    } finally { setSaving(false); }
+      setError(
+        err.response?.data?.message || "Failed to save profile."
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const input = "w-full rounded-lg border border-border bg-card px-3 py-2.5 focus:border-accent focus:ring-2 focus:ring-accent/30 outline-none";
+  const inputCls =
+    "w-full px-4 py-3 rounded-lg bg-[#F5EFE4] border border-[#3B2F25]/20 text-[#3B2F25] focus:outline-none focus:border-[#C7693D] focus:ring-2 focus:ring-[#C7693D]/20";
 
   if (loading) {
     return (
-      <div className="min-h-screen flex bg-background">
+      <div className="min-h-screen flex bg-[#F5EFE4]">
         <AppNav />
-        <div className="flex-1 flex items-center justify-center text-muted-foreground">Loading profile…</div>
+
+        <div className="flex-1 flex items-center justify-center text-[#5B4329] text-lg">
+          Loading profile…
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-[#F5EFE4]">
       <AppNav />
+
       <main className="flex-1 pb-20 md:pb-0">
-        <div className="mx-auto max-w-3xl px-5 sm:px-8 py-10">
-          <div className="border-b border-border pb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div className="mx-auto max-w-4xl px-5 sm:px-8 py-10">
+
+          {/* HEADER */}
+          <div className="border-b border-[#3B2F25]/10 pb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
-              <span className="text-xs font-medium uppercase tracking-[0.25em] text-accent">Your details</span>
-              <h1 className="mt-2 font-serif text-3xl sm:text-4xl font-semibold">Profile</h1>
-              <p className="mt-2 text-muted-foreground">Tell us about your style so Atelier can dress you well.</p>
+              <span className="text-xs uppercase tracking-[0.3em] text-[#C7693D]">
+                YOUR DETAILS
+              </span>
+
+              <h1
+                className="mt-2 text-[#3B2F25] text-4xl sm:text-5xl"
+                style={{
+                  fontFamily: "Fraunces, serif",
+                }}
+              >
+                Profile
+              </h1>
+
+              <p className="mt-3 text-[#5B4329]/80">
+                Tell Atelier more about your body, preferences, and style.
+              </p>
             </div>
-            <button onClick={logout} className="text-sm font-medium text-muted-foreground hover:text-red-600">Logout</button>
+
+            <button
+              onClick={logout}
+              className="text-sm font-medium text-[#5B4329] hover:text-red-600 transition"
+            >
+              Logout
+            </button>
           </div>
 
-          {message && (
-            <div className={`mt-6 p-3 rounded-lg text-sm border ${
-              message.type === "success"
-                ? "bg-green-50 text-green-700 border-green-200"
-                : "bg-red-50 text-red-700 border-red-200"
-            }`}>{message.text}</div>
+          {/* ALERTS */}
+          {error && (
+            <div className="mt-6 p-3 rounded-lg bg-red-100 text-red-800 border border-red-200 text-sm">
+              {error}
+            </div>
           )}
 
-          <form onSubmit={handleSubmit} className="mt-8 grid gap-5 rounded-2xl border border-border bg-card p-6 sm:p-8">
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Height (cm)</label>
-              <input type="number" name="height" value={form.height} onChange={handleChange} className={input} />
+          {message && (
+            <div className="mt-6 p-3 rounded-lg bg-green-100 text-green-800 border border-green-200 text-sm">
+              {message}
             </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Body type</label>
-              <select name="bodyType" value={form.bodyType} onChange={handleChange} className={input}>
-                <option value="">Select…</option>
-                {BODY_TYPES.map((b) => <option key={b} value={b}>{b}</option>)}
-              </select>
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Location</label>
-              <input type="text" name="location" value={form.location} onChange={handleChange} className={input} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Style preferences</label>
-              <textarea name="stylePreferences" rows={4} value={form.stylePreferences} onChange={handleChange}
-                placeholder="e.g. minimalist, streetwear, vintage…" className={input} />
+          )}
+
+          {/* FORM */}
+          <form
+            onSubmit={onSubmit}
+            className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-5 bg-white/70 backdrop-blur rounded-3xl shadow-xl p-8 border border-[#3B2F25]/10"
+          >
+
+            {/* NAME */}
+            <Field label="Name">
+              <input
+                className={inputCls}
+                value={form.name}
+                onChange={update("name")}
+                required
+              />
+            </Field>
+
+            {/* AGE */}
+            <Field label="Age">
+              <input
+                type="number"
+                className={inputCls}
+                value={form.age}
+                onChange={update("age")}
+                required
+              />
+            </Field>
+
+            {/* GENDER */}
+            <div className="md:col-span-2">
+              <span className="block text-xs uppercase tracking-[0.2em] text-[#3B2F25]/70 mb-2">
+                Gender
+              </span>
+
+              <div className="flex gap-6">
+                {["female", "male"].map((g) => (
+                  <label
+                    key={g}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="gender"
+                      value={g}
+                      checked={form.gender === g}
+                      onChange={update("gender")}
+                      className="accent-[#C7693D]"
+                    />
+
+                    <span className="capitalize text-[#3B2F25]">
+                      {g}
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
 
-            <button type="submit" disabled={saving}
-              className="mt-2 inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60 transition">
-              {saving ? "Saving…" : "Save changes"}
-            </button>
+            {/* HEIGHT */}
+            <Field label="Height (cm)">
+              <input
+                type="number"
+                className={inputCls}
+                value={form.height}
+                onChange={update("height")}
+                required
+              />
+            </Field>
+
+            {/* WEIGHT */}
+            <Field label="Weight (kg)">
+              <input
+                type="number"
+                className={inputCls}
+                value={form.weight}
+                onChange={update("weight")}
+                required
+              />
+            </Field>
+
+            {/* BODY TYPE */}
+            <div className="md:col-span-2">
+              <Field label="Body Type">
+                <select
+                  className={inputCls}
+                  value={form.body_type}
+                  onChange={update("body_type")}
+                >
+                  {BODY_TYPES.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+
+            {/* LOCATION */}
+            <Field label="Location">
+              <input
+                type="text"
+                name="location"
+                value={form.location}
+                onChange={handleChange}
+                className={inputCls}
+                placeholder="Your city"
+              />
+            </Field>
+
+            {/* STYLE PREFS */}
+            <div className="md:col-span-2">
+              <Field label="Style Preferences">
+                <textarea
+                  name="stylePreferences"
+                  rows={4}
+                  value={form.stylePreferences}
+                  onChange={handleChange}
+                  placeholder="Minimalist, streetwear, vintage, chic..."
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+
+            {/* BUTTONS */}
+            <div className="md:col-span-2 flex flex-wrap gap-4 mt-4">
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-6 py-3 rounded-full bg-[#3B2F25] text-[#F5EFE4] tracking-[0.2em] text-sm font-medium hover:bg-[#C7693D] transition disabled:opacity-60"
+              >
+                {saving ? "SAVING…" : "SAVE PROFILE"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate("/wardrobe")}
+                className="px-6 py-3 rounded-full border border-[#3B2F25] text-[#3B2F25] tracking-[0.2em] text-sm font-medium hover:bg-[#3B2F25] hover:text-[#F5EFE4] transition"
+              >
+                GO TO WARDROBE →
+              </button>
+
+            </div>
           </form>
         </div>
       </main>
