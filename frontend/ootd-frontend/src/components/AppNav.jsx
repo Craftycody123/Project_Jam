@@ -28,7 +28,7 @@ export default function AppNav() {
     <>
       {/* Desktop Sidebar */}
       <aside className="sticky top-0 hidden md:flex h-screen w-64 shrink-0 flex-col border-r border-border bg-sidebar px-4 py-6">
-        <Link to="/" className="mb-8 flex items-center gap-2 px-2">
+        <Link to="/wardrobe" className="mb-8 flex items-center gap-2 px-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Shirt className="h-5 w-5" />
           </span>
