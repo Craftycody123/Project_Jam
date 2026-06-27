@@ -7,16 +7,14 @@ from models import user_models
 import schemas, auth
 from database import engine, get_db, Base
 
-# Wardrobe models
 from models.garment_model import Garment
 from models.recommendation_model import Recommendation
 from models.feedback_model import Feedback
 
-# Wardrobe routers
 from routes.garments import router as garments_router
 from routes.recommendations import router as recommendations_router
-from routes.feedback import router as feedback_router
 from routes.weather import router as weather_router
+# ← feedback_router removed, all those endpoints are in recommendations_router now
 
 
 @asynccontextmanager
@@ -106,7 +104,6 @@ async def update_profile(
 
 app.include_router(garments_router)
 app.include_router(recommendations_router)
-app.include_router(feedback_router)
 app.include_router(weather_router)
 
 
