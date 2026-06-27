@@ -29,7 +29,7 @@ function Field({ label, children }) {
 }
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const {  logout } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
