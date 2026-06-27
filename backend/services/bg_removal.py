@@ -1,11 +1,12 @@
 from rembg import remove, new_session
 
-session = new_session("u2netp")
+session = None
 
-def remove_background_bytes(image_bytes: bytes) -> bytes:
-    output = remove(
-        image_bytes,
-        session=session
-    )
+def get_session():
+    global session
+    if session is None:
+        session = new_session("u2netp")
+    return session
 
-    return output
+def remove_background_bytes(image_bytes):
+    return remove(image_bytes, session=get_session())
