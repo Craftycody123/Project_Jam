@@ -42,6 +42,9 @@ export const recommendationAPI = {
   generateRecommendation: (data) =>
     axiosInstance.post("/recommendations/generate", data),
 
+  submitFeedback: (data) =>
+    axiosInstance.post("/recommendations/feedback", data),
+
   getHistory: () =>
     axiosInstance.get("/recommendations/history"),
 };

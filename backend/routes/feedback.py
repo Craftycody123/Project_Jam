@@ -12,7 +12,7 @@ router = APIRouter(prefix="/recommendations", tags=["Feedback"])
 
 class FeedbackRequest(BaseModel):
     recommendation_id: int
-    garment_id:        int
+    
     feedback:          str    # "like" or "dislike"
 
 
@@ -45,49 +45,40 @@ async def submit_feedback(
             status_code=404,
             detail="Recommendation not found"
         )
+    
 
-    # Check if feedback already exists
-    existing_result = await db.execute(
-        select(Feedback).where(
-            Feedback.recommendation_id == body.recommendation_id,
-            Feedback.garment_id == body.garment_id,
-            Feedback.user_id == current_user.id
+    
+
+    
+    for garment_id in rec.recommended_items:
+
+        existing_result = await db.execute(
+                select(Feedback).where(
+                Feedback.recommendation_id == body.recommendation_id,
+                Feedback.garment_id == garment_id,
+                Feedback.user_id == current_user.id,
+            )
         )
-    )
 
-    existing = existing_result.scalar_one_or_none()
+        existing = existing_result.scalar_one_or_none()
 
-    if existing:
-        existing.feedback = body.feedback
-
-        await db.commit()
-        await db.refresh(existing)
-
-        return {
-            "message": "Feedback updated",
-            "feedback": existing.feedback
-        }
-
-    # Create new feedback
-    fb = Feedback(
-        recommendation_id=body.recommendation_id,
-        garment_id=body.garment_id,
-        user_id=current_user.id,
-        feedback=body.feedback,
-    )
-
-    db.add(fb)
+        if existing:
+             existing.feedback = body.feedback
+        else:
+             fb = Feedback(
+            recommendation_id=body.recommendation_id,
+            garment_id=garment_id,
+            user_id=current_user.id,
+            feedback=body.feedback,
+        )
+        db.add(fb)
 
     await db.commit()
-    await db.refresh(fb)
 
     return {
-        "id": fb.id,
-        "recommendation_id": fb.recommendation_id,
-        "garment_id": fb.garment_id,
-        "feedback": fb.feedback,
-        "created_at": fb.created_at,
-    }
+    "success": True,
+    "message": "Feedback saved successfully",
+}
 # ─── GET /recommendations/feedback ──────────────────────────────────────────
 
 @router.get("/feedback")

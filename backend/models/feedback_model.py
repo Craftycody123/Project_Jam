@@ -12,6 +12,6 @@ class Feedback(Base):
     garment_id        = Column(Integer, ForeignKey("garments.id"), nullable=False)
     feedback          = Column(String, nullable=False)   # "like" or "dislike"
     created_at        = Column(DateTime, default=datetime.utcnow)
-
+    user              = relationship("User", back_populates="feedbacks")
     recommendation = relationship("Recommendation", back_populates="feedbacks")
     garment        = relationship("Garment", back_populates="feedbacks")
